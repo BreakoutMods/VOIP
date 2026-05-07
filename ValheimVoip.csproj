@@ -4,6 +4,9 @@
     <TargetFramework>net462</TargetFramework>
     <RootNamespace>ValheimVoip</RootNamespace>
     <AssemblyName>ValheimVoip</AssemblyName>
+    <Authors>BreakoutMods</Authors>
+    <Company>BreakoutMods</Company>
+    <RepositoryUrl>https://github.com/BreakoutMods/VOIP</RepositoryUrl>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <Deterministic>true</Deterministic>

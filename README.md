@@ -1,4 +1,6 @@
-# Valheim VOIP
+# BreakoutMods VOIP
+
+Part of the BreakoutMods Valheim modding suite.
 
 Experimental BepInEx mod that adds proximity voice chat to Valheim using the existing Valheim network session.
 

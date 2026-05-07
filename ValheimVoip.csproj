@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net462</TargetFramework>
+    <RootNamespace>ValheimVoip</RootNamespace>
+    <AssemblyName>ValheimVoip</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <Deterministic>true</Deterministic>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <ValheimServerDir>$(MSBuildProjectDirectory)\..\..</ValheimServerDir>
+    <ValheimManagedDir>$(ValheimServerDir)\valheim_server_Data\Managed</ValheimManagedDir>
+    <BepInExDir>$(ValheimServerDir)\BepInEx</BepInExDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="BepInEx">
+      <HintPath>$(BepInExDir)\core\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="assembly_valheim">
+      <HintPath>$(ValheimManagedDir)\assembly_valheim.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="assembly_utils">
+      <HintPath>$(ValheimManagedDir)\assembly_utils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="netstandard">
+      <HintPath>$(ValheimManagedDir)\netstandard.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ValheimManagedDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ValheimManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>$(ValheimManagedDir)\UnityEngine.AudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(ValheimManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="CopyToBepInEx" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+    <MakeDir Directories="$(BepInExDir)\plugins\ValheimVoip" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExDir)\plugins\ValheimVoip" />
+  </Target>
+</Project>

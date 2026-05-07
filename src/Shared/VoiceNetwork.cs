@@ -1,0 +1,97 @@
+using UnityEngine;
+
+namespace ValheimVoip
+{
+    internal sealed class VoiceNetwork : MonoBehaviour
+    {
+        internal const string VoiceFrameRpcName = "ValheimVoip_VoiceFrame";
+        internal const string SettingsRpcName = "ValheimVoip_Settings";
+
+        private VoiceClient _client;
+        private VoiceServer _server;
+        private VoicePlayback _playback;
+        private bool _registered;
+        private ZRoutedRpc _registeredRpc;
+
+        public void Initialize(VoiceClient client, VoiceServer server, VoicePlayback playback)
+        {
+            _client = client;
+            _server = server;
+            _playback = playback;
+        }
+
+        private void Update()
+        {
+            if (ZRoutedRpc.instance == null)
+            {
+                _registered = false;
+                _registeredRpc = null;
+                if (_client != null)
+                {
+                    _client.OnRpcUnavailable();
+                }
+
+                return;
+            }
+
+            if (!_registered || _registeredRpc != ZRoutedRpc.instance)
+            {
+                ZRoutedRpc.instance.Register<ZPackage>(VoiceFrameRpcName, OnVoiceFrame);
+                ZRoutedRpc.instance.Register<ZPackage>(SettingsRpcName, OnSettings);
+                _registered = true;
+                _registeredRpc = ZRoutedRpc.instance;
+                ValheimVoipPlugin.Log.LogInfo("Voice RPC registered");
+            }
+        }
+
+        public void Send(VoicePacket packet)
+        {
+            _client.Send(packet);
+        }
+
+        private void OnVoiceFrame(long senderPeerId, ZPackage package)
+        {
+            if (!VoiceRuntimeSettings.Enabled)
+            {
+                return;
+            }
+
+            VoicePacket packet;
+            try
+            {
+                packet = VoicePacket.FromPackage(package);
+            }
+            catch (System.Exception ex)
+            {
+                VoiceLog.WarningRateLimited(
+                    "voice-packet-malformed-" + senderPeerId,
+                    "Dropped malformed voice packet from peer " + senderPeerId + ": " + ex.Message,
+                    5f);
+                return;
+            }
+
+            if (ZNet.instance != null && ZNet.instance.IsServer())
+            {
+                _server.Relay(senderPeerId, packet);
+                if (Player.m_localPlayer != null && packet.SpeakerId != Player.m_localPlayer.GetPlayerID())
+                {
+                    _playback.Play(packet);
+                }
+
+                return;
+            }
+
+            if (Player.m_localPlayer != null && packet.SpeakerId == Player.m_localPlayer.GetPlayerID())
+            {
+                return;
+            }
+
+            _playback.Play(packet);
+        }
+
+        private void OnSettings(long senderPeerId, ZPackage package)
+        {
+            _client.ApplyServerSettings(senderPeerId, package);
+        }
+    }
+}

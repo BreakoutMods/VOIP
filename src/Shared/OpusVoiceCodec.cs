@@ -2,7 +2,7 @@ using System;
 using Concentus.Enums;
 using Concentus.Structs;
 
-namespace ValheimVoip
+namespace VOIP
 {
 #pragma warning disable 618
     internal sealed class OpusVoiceCodec

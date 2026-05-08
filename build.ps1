@@ -15,10 +15,10 @@ if (!(Test-Path -LiteralPath $Csc)) {
 }
 
 $OutDir = Join-Path $ProjectDir "bin\$Configuration\net462"
-$DeployDir = Join-Path $BepInExDir "plugins\ValheimVoip"
+$DeployDir = Join-Path $BepInExDir "plugins\VOIP"
 New-Item -ItemType Directory -Force -Path $OutDir, $DeployDir | Out-Null
 
-$Out = Join-Path $OutDir "ValheimVoip.dll"
+$Out = Join-Path $OutDir "VOIP.dll"
 if (Test-Path -LiteralPath $Out) {
     Remove-Item -LiteralPath $Out -Force
 }
@@ -64,10 +64,10 @@ try {
     Remove-Item -LiteralPath (Join-Path $DeployDir "Concentus.dll.pending") -Force -ErrorAction SilentlyContinue
     Write-Host "Deployed to $DeployDir"
 } catch {
-    $Pending = Join-Path $DeployDir "ValheimVoip.dll.pending"
+    $Pending = Join-Path $DeployDir "VOIP.dll.pending"
     Copy-Item -LiteralPath $Out -Destination $Pending -Force
     Remove-Item -LiteralPath (Join-Path $DeployDir "Concentus.dll.pending") -Force -ErrorAction SilentlyContinue
     Write-Warning "Could not overwrite the deployed DLL. It is probably loaded by Valheim or the dedicated server."
-    Write-Warning "Stop the game/server, then copy ValheimVoip.dll.pending over ValheimVoip.dll."
-    Write-Warning "Also delete the old Concentus.dll from this plugin folder; Opus is now embedded in ValheimVoip.dll."
+    Write-Warning "Stop the game/server, then copy VOIP.dll.pending over VOIP.dll."
+    Write-Warning "Also delete the old Concentus.dll from this plugin folder; Opus is now embedded in VOIP.dll."
 }

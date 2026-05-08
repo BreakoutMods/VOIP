@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace ValheimVoip
+namespace VOIP
 {
     internal static class VoiceRuntimeSettings
     {

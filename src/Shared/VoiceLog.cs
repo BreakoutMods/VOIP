@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ValheimVoip
+namespace VOIP
 {
     internal static class VoiceLog
     {
@@ -14,7 +14,7 @@ namespace ValheimVoip
                 return;
             }
 
-            ValheimVoipPlugin.Log.LogInfo(message);
+            VOIPPlugin.Log.LogInfo(message);
         }
 
         public static void WarningRateLimited(string key, string message, float intervalSeconds)
@@ -24,7 +24,7 @@ namespace ValheimVoip
                 return;
             }
 
-            ValheimVoipPlugin.Log.LogWarning(message);
+            VOIPPlugin.Log.LogWarning(message);
         }
 
         private static bool ShouldLog(string key, float intervalSeconds)

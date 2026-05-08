@@ -1,6 +1,6 @@
 # Architecture
 
-Valheim VOIP is split by runtime responsibility rather than by feature name.
+VOIP is split by runtime responsibility rather than by feature name.
 
 ## Client
 
@@ -28,7 +28,7 @@ Shared code is safe to use from both sides.
 - `VoiceSettings`: BepInEx config bindings.
 - `OpusVoiceCodec`: Concentus-backed encoder/decoder wrapper.
 - `AudioMath`: small audio helpers.
-- `ValheimVoipPlugin`: BepInEx entry point and component wiring.
+- `VOIPPlugin`: BepInEx entry point and component wiring.
 
 ## Packet Flow
 

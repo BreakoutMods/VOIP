@@ -1,11 +1,11 @@
 using UnityEngine;
 
-namespace ValheimVoip
+namespace VOIP
 {
     internal sealed class VoiceNetwork : MonoBehaviour
     {
-        internal const string VoiceFrameRpcName = "ValheimVoip_VoiceFrame";
-        internal const string SettingsRpcName = "ValheimVoip_Settings";
+        internal const string VoiceFrameRpcName = "VOIP_VoiceFrame";
+        internal const string SettingsRpcName = "VOIP_Settings";
 
         private VoiceClient _client;
         private VoiceServer _server;
@@ -40,7 +40,7 @@ namespace ValheimVoip
                 ZRoutedRpc.instance.Register<ZPackage>(SettingsRpcName, OnSettings);
                 _registered = true;
                 _registeredRpc = ZRoutedRpc.instance;
-                ValheimVoipPlugin.Log.LogInfo("Voice RPC registered");
+                VOIPPlugin.Log.LogInfo("Voice RPC registered");
             }
         }
 

@@ -1,6 +1,6 @@
 using System;
 
-namespace ValheimVoip
+namespace VOIP
 {
     internal static class AudioMath
     {

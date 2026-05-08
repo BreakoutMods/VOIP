@@ -2,8 +2,8 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>net462</TargetFramework>
-    <RootNamespace>ValheimVoip</RootNamespace>
-    <AssemblyName>ValheimVoip</AssemblyName>
+    <RootNamespace>VOIP</RootNamespace>
+    <AssemblyName>VOIP</AssemblyName>
     <Authors>BreakoutMods</Authors>
     <Company>BreakoutMods</Company>
     <RepositoryUrl>https://github.com/BreakoutMods/VOIP</RepositoryUrl>
@@ -53,7 +53,7 @@
   </ItemGroup>
 
   <Target Name="CopyToBepInEx" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
-    <MakeDir Directories="$(BepInExDir)\plugins\ValheimVoip" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExDir)\plugins\ValheimVoip" />
+    <MakeDir Directories="$(BepInExDir)\plugins\VOIP" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExDir)\plugins\VOIP" />
   </Target>
 </Project>

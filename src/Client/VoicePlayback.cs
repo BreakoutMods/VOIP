@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ValheimVoip
+namespace VOIP
 {
     internal sealed class VoicePlayback : MonoBehaviour
     {
@@ -217,12 +217,12 @@ namespace ValheimVoip
 
                     if (underflows > 0)
                     {
-                        ValheimVoipPlugin.Log.LogWarning("Voice jitter buffer underflow for " + SpeakerId + " (" + underflows + " silent samples in the last window).");
+                        VOIPPlugin.Log.LogWarning("Voice jitter buffer underflow for " + SpeakerId + " (" + underflows + " silent samples in the last window).");
                     }
 
                     if (dropped > 0)
                     {
-                        ValheimVoipPlugin.Log.LogWarning("Voice jitter buffer dropped " + dropped + " old samples for " + SpeakerId + " to stay within the max buffer.");
+                        VOIPPlugin.Log.LogWarning("Voice jitter buffer dropped " + dropped + " old samples for " + SpeakerId + " to stay within the max buffer.");
                     }
                 }
             }

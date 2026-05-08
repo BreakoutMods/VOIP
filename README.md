@@ -1,6 +1,6 @@
 # BreakoutMods VOIP
 
-Part of the BreakoutMods Valheim modding suite.
+Part of the BreakoutMods modding suite.
 
 Experimental BepInEx mod that adds proximity voice chat to Valheim using the existing Valheim network session.
 
@@ -32,7 +32,7 @@ Not done yet:
 
 ## Install
 
-Install `ValheimVoip.dll` on:
+Install `VOIP.dll` on:
 
 - the dedicated server
 - every client that should use voice chat
@@ -40,10 +40,10 @@ Install `ValheimVoip.dll` on:
 Recommended plugin folder:
 
 ```text
-BepInEx/plugins/ValheimVoip/ValheimVoip.dll
+BepInEx/plugins/VOIP/VOIP.dll
 ```
 
-No separate `Concentus.dll` is required. The Opus codec source is compiled directly into `ValheimVoip.dll`.
+No separate `Concentus.dll` is required. The Opus codec source is compiled directly into `VOIP.dll`.
 
 ## How It Works
 
@@ -92,7 +92,7 @@ Valheim dedicated server/
   BepInEx/
   valheim_server_Data/
   Modding/
-    valheim-voip/
+    VOIP/
 ```
 
 Build with:
@@ -107,14 +107,14 @@ The script:
 - compiles with the .NET Framework `csc.exe`
 - references assemblies from the adjacent Valheim dedicated server install
 - compiles locally installed Concentus source into the plugin DLL
-- deploys `ValheimVoip.dll` to `BepInEx/plugins/ValheimVoip`
+- deploys `VOIP.dll` to `BepInEx/plugins/VOIP`
 
-If the server or game has already loaded the DLL, deployment may write `ValheimVoip.dll.pending`. Stop Valheim and rerun the build or copy the pending DLL over the loaded one.
+If the server or game has already loaded the DLL, deployment may write `VOIP.dll.pending`. Stop Valheim and rerun the build or copy the pending DLL over the loaded one.
 
 SDK-style project builds may also work if you have a compatible .NET SDK installed:
 
 ```powershell
-dotnet build .\ValheimVoip.csproj
+dotnet build .\VOIP.csproj
 ```
 
 The SDK build path is mainly for IDE support. `build.ps1` is the reference local build path.
@@ -132,7 +132,7 @@ src/
   Shared/
     AudioMath.cs
     OpusVoiceCodec.cs
-    ValheimVoipPlugin.cs
+    VOIPPlugin.cs
     VoiceNetwork.cs
     VoicePacket.cs
     VoiceRuntimeSettings.cs

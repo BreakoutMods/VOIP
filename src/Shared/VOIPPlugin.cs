@@ -2,13 +2,13 @@ using BepInEx;
 using BepInEx.Logging;
 using UnityEngine;
 
-namespace ValheimVoip
+namespace VOIP
 {
     [BepInPlugin(ModGuid, ModName, ModVersion)]
-    public sealed class ValheimVoipPlugin : BaseUnityPlugin
+    public sealed class VOIPPlugin : BaseUnityPlugin
     {
-        public const string ModGuid = "de.valheim.voip";
-        public const string ModName = "Valheim VOIP";
+        public const string ModGuid = "com.breakoutmods.voip";
+        public const string ModName = "VOIP";
         public const string ModVersion = "0.1.0";
 
         internal static ManualLogSource Log { get; private set; }
@@ -20,7 +20,7 @@ namespace ValheimVoip
             Log = Logger;
             VoiceSettings.Bind(Config);
 
-            _runnerObject = new GameObject("Valheim VOIP");
+            _runnerObject = new GameObject("VOIP");
             DontDestroyOnLoad(_runnerObject);
 
             VoiceNetwork network = _runnerObject.AddComponent<VoiceNetwork>();

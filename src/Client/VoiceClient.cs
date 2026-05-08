@@ -1,4 +1,4 @@
-namespace ValheimVoip
+namespace VOIP
 {
     internal sealed class VoiceClient
     {
@@ -52,7 +52,7 @@ namespace ValheimVoip
                 bool changed = VoiceRuntimeSettings.ApplyServerPackage(package, out summary);
                 if (changed)
                 {
-                    ValheimVoipPlugin.Log.LogInfo("Applied server voice settings: " + summary);
+                    VOIPPlugin.Log.LogInfo("Applied server voice settings: " + summary);
                 }
                 else
                 {

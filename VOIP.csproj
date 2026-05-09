@@ -4,6 +4,7 @@
     <TargetFramework>net462</TargetFramework>
     <RootNamespace>VOIP</RootNamespace>
     <AssemblyName>VOIP</AssemblyName>
+    <Version>0.3.0</Version>
     <Authors>BreakoutMods</Authors>
     <Company>BreakoutMods</Company>
     <RepositoryUrl>https://github.com/BreakoutMods/VOIP</RepositoryUrl>
@@ -13,10 +14,17 @@
     <Deterministic>true</Deterministic>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>
     <ValheimServerDir>$(MSBuildProjectDirectory)\..\..</ValheimServerDir>
     <ValheimManagedDir>$(ValheimServerDir)\valheim_server_Data\Managed</ValheimManagedDir>
     <BepInExDir>$(ValheimServerDir)\BepInEx</BepInExDir>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BreakoutNet\src\BreakoutNet\BreakoutNet.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="BepInEx">
@@ -64,6 +72,8 @@
 
   <Target Name="CopyToBepInEx" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
     <MakeDir Directories="$(BepInExDir)\plugins\VOIP" />
+    <MakeDir Directories="$(BepInExDir)\plugins\BreakoutNet" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\BreakoutNet\src\BreakoutNet\bin\$(Configuration)\net462\BreakoutNet.dll" DestinationFolder="$(BepInExDir)\plugins\BreakoutNet" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExDir)\plugins\VOIP" />
   </Target>
 </Project>

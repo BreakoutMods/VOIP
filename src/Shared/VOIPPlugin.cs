@@ -1,15 +1,17 @@
 using BepInEx;
 using BepInEx.Logging;
 using UnityEngine;
+using BreakoutMods.BreakoutNet;
 
 namespace VOIP
 {
     [BepInPlugin(ModGuid, ModName, ModVersion)]
+    [BepInDependency(BreakoutNetPlugin.PluginGuid)]
     public sealed class VOIPPlugin : BaseUnityPlugin
     {
         public const string ModGuid = "com.breakoutmods.voip";
         public const string ModName = "VOIP";
-        public const string ModVersion = "0.2.0";
+        public const string ModVersion = "0.3.0";
 
         internal static ManualLogSource Log { get; private set; }
 

@@ -1,5 +1,7 @@
 param(
-    [string] $Configuration = "Debug"
+    [ValidateSet("Debug", "Release")]
+    [string] $Configuration = "Debug",
+    [switch] $Deploy
 )
 
 $ErrorActionPreference = "Stop"
@@ -33,7 +35,8 @@ $ManagedReferences = @(
     "UnityEngine.dll",
     "UnityEngine.CoreModule.dll",
     "UnityEngine.AudioModule.dll",
-    "UnityEngine.InputLegacyModule.dll"
+    "UnityEngine.InputLegacyModule.dll",
+    "UnityEngine.IMGUIModule.dll"
 ) | ForEach-Object {
     "/reference:" + (Resolve-Path (Join-Path $ManagedDir $_)).Path
 }
@@ -57,6 +60,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Built $Out"
+
+if (!$Deploy) {
+    Write-Host "Deployment skipped. Pass -Deploy to copy VOIP.dll to BepInEx/plugins/VOIP."
+    exit 0
+}
 
 try {
     Copy-Item -LiteralPath $Out -Destination $DeployDir -Force

@@ -26,6 +26,7 @@ namespace VOIP
                 return;
             }
 
+            packet.SenderPeerId = ZNet.GetUID();
             ZRoutedRpc.instance.InvokeRoutedRPC(serverPeer.m_uid, VoiceNetwork.VoiceFrameRpcName, packet.ToPackage());
         }
 

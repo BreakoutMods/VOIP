@@ -11,6 +11,12 @@ namespace VOIP
 
         public void Play(VoicePacket packet)
         {
+            VoiceMuteState.RememberSpeaker(packet.SpeakerId);
+            if (VoiceMuteState.Deafened || VoiceMuteState.IsMuted(packet.SpeakerId))
+            {
+                return;
+            }
+
             if (packet.OpusPayload == null || packet.OpusPayload.Length == 0 || packet.Samples <= 0)
             {
                 return;
@@ -18,10 +24,12 @@ namespace VOIP
 
             SpeakerPlayback speaker = GetSpeaker(packet.SpeakerId, packet.SampleRate);
             speaker.UpdateSource(packet.SpeakerPosition);
+            speaker.TrackSequence(packet.Sequence);
 
             try
             {
                 speaker.Enqueue(speaker.Codec.Decode(packet.OpusPayload, packet.Samples, packet.SampleRate));
+                VoiceHud.MarkReceiving();
             }
             catch (System.Exception ex)
             {
@@ -94,13 +102,18 @@ namespace VOIP
         private sealed class SpeakerPlayback
         {
             private readonly object _lock = new object();
-            private readonly Queue<float> _samples = new Queue<float>();
             private readonly GameObject _sourceObject;
+            private float[] _ring;
             private AudioClip _clip;
+            private int _readIndex;
+            private int _writeIndex;
             private int _bufferedSamples;
             private int _sampleRate;
+            private int _lastSequence;
+            private bool _hasSequence;
             private int _underflowEvents;
             private int _droppedSamples;
+            private int _lostPackets;
             private float _nextBufferLog;
 
             public readonly long SpeakerId;
@@ -131,8 +144,7 @@ namespace VOIP
                 _sampleRate = sampleRate;
                 lock (_lock)
                 {
-                    _samples.Clear();
-                    _bufferedSamples = 0;
+                    ClearBuffer();
                 }
 
                 if (Source.isPlaying)
@@ -161,6 +173,20 @@ namespace VOIP
                 Source.volume = VoiceSettings.PlaybackVolume.Value;
             }
 
+            public void TrackSequence(int sequence)
+            {
+                lock (_lock)
+                {
+                    if (_hasSequence && sequence > _lastSequence + 1)
+                    {
+                        _lostPackets += sequence - _lastSequence - 1;
+                    }
+
+                    _lastSequence = sequence;
+                    _hasSequence = true;
+                }
+            }
+
             public void Enqueue(float[] decodedSamples)
             {
                 if (decodedSamples == null || decodedSamples.Length == 0)
@@ -172,17 +198,19 @@ namespace VOIP
                 int dropped = 0;
                 lock (_lock)
                 {
+                    EnsureRingCapacity(maxSamples);
                     foreach (float sample in decodedSamples)
                     {
-                        _samples.Enqueue(sample);
-                    }
+                        if (_bufferedSamples == _ring.Length)
+                        {
+                            _readIndex = (_readIndex + 1) % _ring.Length;
+                            _bufferedSamples--;
+                            dropped++;
+                        }
 
-                    _bufferedSamples += decodedSamples.Length;
-                    while (_bufferedSamples > maxSamples && _samples.Count > 0)
-                    {
-                        _samples.Dequeue();
-                        _bufferedSamples--;
-                        dropped++;
+                        _ring[_writeIndex] = sample;
+                        _writeIndex = (_writeIndex + 1) % _ring.Length;
+                        _bufferedSamples++;
                     }
 
                     _droppedSamples += dropped;
@@ -205,12 +233,15 @@ namespace VOIP
                 {
                     int underflows;
                     int dropped;
+                    int lost;
                     lock (_lock)
                     {
                         underflows = _underflowEvents;
                         dropped = _droppedSamples;
+                        lost = _lostPackets;
                         _underflowEvents = 0;
                         _droppedSamples = 0;
+                        _lostPackets = 0;
                     }
 
                     _nextBufferLog = Time.time + 10f;
@@ -223,6 +254,11 @@ namespace VOIP
                     if (dropped > 0)
                     {
                         VOIPPlugin.Log.LogWarning("Voice jitter buffer dropped " + dropped + " old samples for " + SpeakerId + " to stay within the max buffer.");
+                    }
+
+                    if (lost > 0)
+                    {
+                        VOIPPlugin.Log.LogWarning("Voice playback detected " + lost + " missing packet sequence(s) for " + SpeakerId + " in the last window.");
                     }
                 }
             }
@@ -252,9 +288,10 @@ namespace VOIP
                 {
                     for (int i = 0; i < data.Length; i++)
                     {
-                        if (_samples.Count > 0)
+                        if (_bufferedSamples > 0 && _ring != null)
                         {
-                            data[i] = _samples.Dequeue();
+                            data[i] = _ring[_readIndex];
+                            _readIndex = (_readIndex + 1) % _ring.Length;
                             _bufferedSamples--;
                         }
                         else
@@ -268,6 +305,24 @@ namespace VOIP
 
             private void OnAudioSetPosition(int position)
             {
+            }
+
+            private void EnsureRingCapacity(int capacity)
+            {
+                if (_ring != null && _ring.Length == capacity)
+                {
+                    return;
+                }
+
+                _ring = new float[capacity];
+                ClearBuffer();
+            }
+
+            private void ClearBuffer()
+            {
+                _readIndex = 0;
+                _writeIndex = 0;
+                _bufferedSamples = 0;
             }
         }
     }

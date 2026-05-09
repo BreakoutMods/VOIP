@@ -8,9 +8,10 @@
     <Company>BreakoutMods</Company>
     <RepositoryUrl>https://github.com/BreakoutMods/VOIP</RepositoryUrl>
     <LangVersion>latest</LangVersion>
+    <DefineConstants>TRACE;PARITY</DefineConstants>
     <Nullable>disable</Nullable>
     <Deterministic>true</Deterministic>
-    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <ValheimServerDir>$(MSBuildProjectDirectory)\..\..</ValheimServerDir>
     <ValheimManagedDir>$(ValheimServerDir)\valheim_server_Data\Managed</ValheimManagedDir>
@@ -30,7 +31,7 @@
       <HintPath>$(ValheimManagedDir)\assembly_utils.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="netstandard">
+    <Reference Include="netstandard, Version=2.1.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51">
       <HintPath>$(ValheimManagedDir)\netstandard.dll</HintPath>
       <Private>false</Private>
     </Reference>
@@ -50,6 +51,15 @@
       <HintPath>$(ValheimManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(ValheimManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="src\**\*.cs" />
+    <Compile Include="libs\concentus-v1.2-csharp\CSharp\Concentus\**\*.cs" Exclude="libs\concentus-v1.2-csharp\CSharp\Concentus\Properties\AssemblyInfo.cs" />
   </ItemGroup>
 
   <Target Name="CopyToBepInEx" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">

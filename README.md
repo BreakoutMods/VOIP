@@ -18,16 +18,22 @@ Implemented:
 - Valheim routed RPC transport
 - Server-side proximity relay
 - Server-authoritative voice settings sync
+- Server-authoritative speaker identity and position for relayed packets
+- Hardened voice packet validation with protocol versioning and sequence numbers
+- Per-sender voice frame rate limiting
 - Spatial Unity audio playback
 - Jitter-buffered playback using streaming `AudioClip` output
+- Sequence-aware packet loss diagnostics
 - Rate-limited diagnostics for malformed voice packets and settings sync
+- Microphone device config and push-to-talk microphone stop delay
+- Minimal transmit/receive/mute/deafen HUD indicator
+- Local deafen and last-speaker mute controls
 - Client / Server / Shared source layout
 
 Not done yet:
 
 - Input device selection
-- HUD transmit/receive indicator
-- Player mute/deafen UI
+- Polished player list mute/deafen UI
 - Polished config migration/versioning
 
 ## Install
@@ -64,9 +70,13 @@ BepInEx generates the config after the first launch.
 Common client settings:
 
 - push-to-talk key
+- microphone device
+- microphone stop delay after push-to-talk release
 - voice activation enabled/disabled
 - voice activation threshold
 - playback volume
+- local deafen key
+- mute last speaker key
 - jitter buffer target duration
 - maximum jitter buffer duration
 
@@ -107,17 +117,23 @@ The script:
 - compiles with the .NET Framework `csc.exe`
 - references assemblies from the adjacent Valheim dedicated server install
 - compiles locally installed Concentus source into the plugin DLL
-- deploys `VOIP.dll` to `BepInEx/plugins/VOIP`
+- writes `VOIP.dll` to `bin/<Configuration>/net462`
+
+Deploy with:
+
+```powershell
+.\build.ps1 -Configuration Release -Deploy
+```
 
 If the server or game has already loaded the DLL, deployment may write `VOIP.dll.pending`. Stop Valheim and rerun the build or copy the pending DLL over the loaded one.
 
 SDK-style project builds may also work if you have a compatible .NET SDK installed:
 
 ```powershell
-dotnet build .\VOIP.csproj
+dotnet build .\VOIP.csproj -c Release
 ```
 
-The SDK build path is mainly for IDE support. `build.ps1` is the reference local build path.
+The SDK project explicitly compiles only VOIP sources and the Concentus codec core, not the upstream demo/test projects.
 
 ## Source Layout
 
@@ -126,8 +142,11 @@ src/
   Client/
     VoiceCapture.cs
     VoiceClient.cs
+    VoiceHud.cs
+    VoiceMuteState.cs
     VoicePlayback.cs
   Server/
+    VoiceRateLimiter.cs
     VoiceServer.cs
   Shared/
     AudioMath.cs
@@ -137,6 +156,7 @@ src/
     VoicePacket.cs
     VoiceRuntimeSettings.cs
     VoiceSettings.cs
+    VoiceValidationHarness.cs
 ```
 
 ```text
@@ -166,10 +186,9 @@ More detail: [docs/architecture.md](docs/architecture.md)
 
 Near-term improvements:
 
-- Add microphone device selection
-- Add transmit/receive HUD indicator
-- Add per-player mute/deafen controls
-- Add packet sequence numbers and loss statistics
+- Add polished microphone device UI
+- Add player-list mute/deafen controls
+- Add in-game voice diagnostics panel
 
 Longer-term ideas:
 

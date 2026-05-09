@@ -46,7 +46,10 @@ namespace VOIP
 
         public void Send(VoicePacket packet)
         {
-            _client.Send(packet);
+            if (_client != null)
+            {
+                _client.Send(packet);
+            }
         }
 
         private void OnVoiceFrame(long senderPeerId, ZPackage package)
@@ -72,16 +75,31 @@ namespace VOIP
 
             if (ZNet.instance != null && ZNet.instance.IsServer())
             {
-                _server.Relay(senderPeerId, packet);
-                if (Player.m_localPlayer != null && packet.SpeakerId != Player.m_localPlayer.GetPlayerID())
+                VoicePacket relayPacket = _server != null ? _server.Relay(senderPeerId, packet) : null;
+                if (relayPacket != null && _playback != null && Player.m_localPlayer != null && relayPacket.SpeakerId != ZNet.GetUID())
                 {
-                    _playback.Play(packet);
+                    _playback.Play(relayPacket);
                 }
 
                 return;
             }
 
-            if (Player.m_localPlayer != null && packet.SpeakerId == Player.m_localPlayer.GetPlayerID())
+            if (_playback == null)
+            {
+                return;
+            }
+
+            ZNetPeer serverPeer = ZNet.instance != null ? ZNet.instance.GetServerPeer() : null;
+            if (serverPeer == null || serverPeer.m_uid != senderPeerId)
+            {
+                VoiceLog.WarningRateLimited(
+                    "voice-frame-unauthorized-" + senderPeerId,
+                    "Ignored voice frame from non-server peer " + senderPeerId + ".",
+                    30f);
+                return;
+            }
+
+            if (packet.SpeakerId == ZNet.GetUID())
             {
                 return;
             }
@@ -91,7 +109,10 @@ namespace VOIP
 
         private void OnSettings(long senderPeerId, ZPackage package)
         {
-            _client.ApplyServerSettings(senderPeerId, package);
+            if (_client != null)
+            {
+                _client.ApplyServerSettings(senderPeerId, package);
+            }
         }
     }
 }

@@ -7,6 +7,11 @@ namespace VOIP
     {
         public static ConfigEntry<bool> Enabled { get; private set; }
         public static ConfigEntry<string> PushToTalkKey { get; private set; }
+        public static ConfigEntry<string> MicrophoneDevice { get; private set; }
+        public static ConfigEntry<int> MicrophoneStopDelayMilliseconds { get; private set; }
+        public static ConfigEntry<string> ToggleDeafenKey { get; private set; }
+        public static ConfigEntry<string> ToggleMuteLastSpeakerKey { get; private set; }
+        public static ConfigEntry<string> MutedSpeakerIds { get; private set; }
         public static ConfigEntry<bool> VoiceActivation { get; private set; }
         public static ConfigEntry<float> VoiceActivationThreshold { get; private set; }
         public static ConfigEntry<float> ProximityMeters { get; private set; }
@@ -23,6 +28,11 @@ namespace VOIP
         {
             Enabled = config.Bind("General", "Enabled", true, "Enable proximity voice chat.");
             PushToTalkKey = config.Bind("Input", "PushToTalkKey", "V", "Unity KeyCode name used for push-to-talk.");
+            MicrophoneDevice = config.Bind("Input", "MicrophoneDevice", "", "Preferred Unity microphone device name. Leave empty to use the default device.");
+            MicrophoneStopDelayMilliseconds = config.Bind("Input", "MicrophoneStopDelayMilliseconds", 250, "Delay before stopping the microphone after push-to-talk is released.");
+            ToggleDeafenKey = config.Bind("Input", "ToggleDeafenKey", "B", "Unity KeyCode name used to toggle local deafen.");
+            ToggleMuteLastSpeakerKey = config.Bind("Input", "ToggleMuteLastSpeakerKey", "M", "Unity KeyCode name used to mute or unmute the last received speaker.");
+            MutedSpeakerIds = config.Bind("Moderation", "MutedSpeakerIds", "", "Comma-separated VOIP speaker IDs muted locally.");
             VoiceActivation = config.Bind("Input", "VoiceActivation", false, "Transmit when the microphone level exceeds the configured threshold.");
             VoiceActivationThreshold = config.Bind("Input", "VoiceActivationThreshold", 0.015f, "RMS threshold used when voice activation is enabled.");
             ProximityMeters = config.Bind("Proximity", "ProximityMeters", 35f, "Maximum distance in meters for receiving voice.");
@@ -40,9 +50,18 @@ namespace VOIP
         {
             get
             {
-                KeyCode parsed;
-                return System.Enum.TryParse(PushToTalkKey.Value, true, out parsed) ? parsed : KeyCode.V;
+                return ParseKeyCode(PushToTalkKey.Value, KeyCode.V);
             }
+        }
+
+        public static KeyCode ToggleDeafenKeyCode
+        {
+            get { return ParseKeyCode(ToggleDeafenKey.Value, KeyCode.B); }
+        }
+
+        public static KeyCode ToggleMuteLastSpeakerKeyCode
+        {
+            get { return ParseKeyCode(ToggleMuteLastSpeakerKey.Value, KeyCode.M); }
         }
 
         public static int EffectiveSampleRate
@@ -97,6 +116,17 @@ namespace VOIP
         public static int EffectiveMaxJitterBufferMilliseconds
         {
             get { return Mathf.Clamp(MaxJitterBufferMilliseconds.Value, EffectiveJitterBufferMilliseconds, 2000); }
+        }
+
+        public static int EffectiveMicrophoneStopDelayMilliseconds
+        {
+            get { return Mathf.Clamp(MicrophoneStopDelayMilliseconds.Value, 0, 5000); }
+        }
+
+        private static KeyCode ParseKeyCode(string value, KeyCode fallback)
+        {
+            KeyCode parsed;
+            return System.Enum.TryParse(value, true, out parsed) ? parsed : fallback;
         }
     }
 }

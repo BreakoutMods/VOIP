@@ -5,11 +5,16 @@ namespace VOIP
     internal sealed class VoiceCapture : MonoBehaviour
     {
         private const int MicrophoneBufferSeconds = 1;
+        private static readonly System.Reflection.MethodInfo AudioClipGetData = typeof(AudioClip).GetMethod("GetData", new[] { typeof(float[]), typeof(int) });
 
         private VoiceNetwork _network;
         private AudioClip _microphoneClip;
         private string _device;
         private int _lastPosition;
+        private int _sequence;
+        private int _activeSampleRate;
+        private int _activeFrameMilliseconds;
+        private float _stopMicrophoneAt;
         private float[] _frameBuffer;
         private float[] _scratch;
         private readonly OpusVoiceCodec _codec = new OpusVoiceCodec();
@@ -29,9 +34,15 @@ namespace VOIP
 
             if (!ShouldTransmit())
             {
+                if (!VoiceSettings.VoiceActivation.Value && _microphoneClip != null && Time.time >= _stopMicrophoneAt)
+                {
+                    StopMicrophone();
+                }
+
                 return;
             }
 
+            _stopMicrophoneAt = Time.time + (VoiceSettings.EffectiveMicrophoneStopDelayMilliseconds / 1000f);
             EnsureMicrophone();
             CaptureAvailableFrames();
         }
@@ -48,24 +59,55 @@ namespace VOIP
 
         private void EnsureMicrophone()
         {
-            if (_microphoneClip != null && Microphone.IsRecording(_device))
+            int sampleRate = VoiceRuntimeSettings.SampleRate;
+            int frameMilliseconds = VoiceRuntimeSettings.FrameMilliseconds;
+            string preferredDevice = ResolveMicrophoneDevice();
+
+            if (_microphoneClip != null &&
+                Microphone.IsRecording(_device) &&
+                _activeSampleRate == sampleRate &&
+                _activeFrameMilliseconds == frameMilliseconds &&
+                _device == preferredDevice)
             {
                 return;
             }
+
+            StopMicrophone();
 
             if (Microphone.devices.Length == 0)
             {
+                VoiceLog.WarningRateLimited("voice-no-microphone", "VOIP could not find a microphone device.", 10f);
                 return;
             }
 
-            _device = Microphone.devices[0];
-            int sampleRate = VoiceRuntimeSettings.SampleRate;
+            _device = preferredDevice;
             _microphoneClip = Microphone.Start(_device, true, MicrophoneBufferSeconds, sampleRate);
             _lastPosition = 0;
+            _activeSampleRate = sampleRate;
+            _activeFrameMilliseconds = frameMilliseconds;
 
-            int frameSamples = sampleRate * VoiceRuntimeSettings.FrameMilliseconds / 1000;
+            int frameSamples = sampleRate * frameMilliseconds / 1000;
             _frameBuffer = new float[frameSamples];
             _scratch = new float[_microphoneClip.samples];
+        }
+
+        private static string ResolveMicrophoneDevice()
+        {
+            string configured = VoiceSettings.MicrophoneDevice.Value;
+            if (!string.IsNullOrWhiteSpace(configured))
+            {
+                foreach (string device in Microphone.devices)
+                {
+                    if (string.Equals(device, configured, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        return device;
+                    }
+                }
+
+                VoiceLog.WarningRateLimited("voice-microphone-missing-" + configured, "Configured VOIP microphone device was not found: " + configured, 10f);
+            }
+
+            return Microphone.devices.Length > 0 ? Microphone.devices[0] : null;
         }
 
         private void StopMicrophone()
@@ -82,6 +124,8 @@ namespace VOIP
 
             _microphoneClip = null;
             _lastPosition = 0;
+            _frameBuffer = null;
+            _scratch = null;
         }
 
         private void CaptureAvailableFrames()
@@ -114,15 +158,25 @@ namespace VOIP
         {
             if (startPosition + destination.Length <= _microphoneClip.samples)
             {
-                _microphoneClip.GetData(destination, startPosition);
+                GetAudioClipData(_microphoneClip, destination, startPosition);
                 return;
             }
 
-            _microphoneClip.GetData(_scratch, 0);
+            GetAudioClipData(_microphoneClip, _scratch, 0);
             for (int i = 0; i < destination.Length; i++)
             {
                 destination[i] = _scratch[(startPosition + i) % _microphoneClip.samples];
             }
+        }
+
+        private static void GetAudioClipData(AudioClip clip, float[] destination, int offsetSamples)
+        {
+            if (AudioClipGetData == null)
+            {
+                throw new System.MissingMethodException("UnityEngine.AudioClip.GetData(float[], int)");
+            }
+
+            AudioClipGetData.Invoke(clip, new object[] { destination, offsetSamples });
         }
 
         private void TrySendFrame(float[] frame)
@@ -142,6 +196,8 @@ namespace VOIP
             VoicePacket packet = new VoicePacket
             {
                 SpeakerId = localPlayer.GetPlayerID(),
+                SenderPeerId = ZNet.GetUID(),
+                Sequence = ++_sequence,
                 SpeakerPosition = localPlayer.transform.position,
                 SampleRate = VoiceRuntimeSettings.SampleRate,
                 Samples = frame.Length,
@@ -149,6 +205,7 @@ namespace VOIP
             };
 
             _network.Send(packet);
+            VoiceHud.MarkTransmitting();
         }
     }
 }

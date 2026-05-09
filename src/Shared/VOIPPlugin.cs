@@ -9,7 +9,7 @@ namespace VOIP
     {
         public const string ModGuid = "com.breakoutmods.voip";
         public const string ModName = "VOIP";
-        public const string ModVersion = "0.1.0";
+        public const string ModVersion = "0.2.0";
 
         internal static ManualLogSource Log { get; private set; }
 
@@ -25,12 +25,19 @@ namespace VOIP
 
             VoiceNetwork network = _runnerObject.AddComponent<VoiceNetwork>();
             VoiceServer server = _runnerObject.AddComponent<VoiceServer>();
-            VoiceClient client = new VoiceClient();
-            VoicePlayback playback = _runnerObject.AddComponent<VoicePlayback>();
-            VoiceCapture capture = _runnerObject.AddComponent<VoiceCapture>();
+            VoiceClient client = null;
+            VoicePlayback playback = null;
+
+            if (!Application.isBatchMode)
+            {
+                client = new VoiceClient();
+                playback = _runnerObject.AddComponent<VoicePlayback>();
+                VoiceCapture capture = _runnerObject.AddComponent<VoiceCapture>();
+                capture.Initialize(network);
+                _runnerObject.AddComponent<VoiceHud>();
+            }
 
             network.Initialize(client, server, playback);
-            capture.Initialize(network);
 
             Logger.LogInfo(ModName + " " + ModVersion + " loaded");
         }

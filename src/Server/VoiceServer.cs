@@ -8,6 +8,7 @@ namespace VOIP
 
         internal static VoiceServer Instance { get; private set; }
 
+        private readonly VoiceRateLimiter _rateLimiter = new VoiceRateLimiter();
         private float _nextSettingsBroadcast;
 
         private void Awake()
@@ -37,13 +38,38 @@ namespace VOIP
             }
         }
 
-        public void Relay(long senderPeerId, VoicePacket packet)
+        public VoicePacket Relay(long senderPeerId, VoicePacket packet)
         {
             if (ZNet.instance == null || ZRoutedRpc.instance == null)
             {
-                return;
+                return null;
             }
 
+            if (!VoiceRuntimeSettings.Enabled)
+            {
+                return null;
+            }
+
+            if (!_rateLimiter.Allow(senderPeerId))
+            {
+                VoiceLog.WarningRateLimited(
+                    "voice-rate-limit-" + senderPeerId,
+                    "Dropped voice frames from peer " + senderPeerId + " because they exceeded the configured voice rate.",
+                    5f);
+                return null;
+            }
+
+            Vector3 speakerPosition;
+            if (!TryGetServerKnownPosition(senderPeerId, out speakerPosition))
+            {
+                VoiceLog.WarningRateLimited(
+                    "voice-missing-position-" + senderPeerId,
+                    "Dropped voice frame from peer " + senderPeerId + " because the server could not resolve its position.",
+                    5f);
+                return null;
+            }
+
+            VoicePacket relayPacket = packet.WithServerSpeaker(senderPeerId, speakerPosition);
             float maxDistance = VoiceRuntimeSettings.ProximityMeters;
             float maxDistanceSquared = maxDistance * maxDistance;
 
@@ -54,13 +80,36 @@ namespace VOIP
                     continue;
                 }
 
-                if ((peer.GetRefPos() - packet.SpeakerPosition).sqrMagnitude > maxDistanceSquared)
+                if ((peer.GetRefPos() - relayPacket.SpeakerPosition).sqrMagnitude > maxDistanceSquared)
                 {
                     continue;
                 }
 
-                ZRoutedRpc.instance.InvokeRoutedRPC(peer.m_uid, VoiceNetwork.VoiceFrameRpcName, packet.ToPackage());
+                ZRoutedRpc.instance.InvokeRoutedRPC(peer.m_uid, VoiceNetwork.VoiceFrameRpcName, relayPacket.ToPackage());
             }
+
+            return relayPacket;
+        }
+
+        private static bool TryGetServerKnownPosition(long senderPeerId, out Vector3 position)
+        {
+            if (senderPeerId == ZNet.GetUID() && Player.m_localPlayer != null)
+            {
+                position = Player.m_localPlayer.transform.position;
+                return true;
+            }
+
+            foreach (ZNetPeer peer in ZNet.instance.GetConnectedPeers())
+            {
+                if (peer != null && peer.m_uid == senderPeerId)
+                {
+                    position = peer.GetRefPos();
+                    return true;
+                }
+            }
+
+            position = Vector3.zero;
+            return false;
         }
 
         private static void BroadcastServerSettings()

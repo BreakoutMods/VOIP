@@ -11,14 +11,31 @@ $ServerDir = Resolve-Path (Join-Path $ProjectDir "..\..")
 $ManagedDir = Join-Path $ServerDir "valheim_server_Data\Managed"
 $BepInExDir = Join-Path $ServerDir "BepInEx"
 $Csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+$BreakoutNetDir = Resolve-Path (Join-Path $ProjectDir "..\BreakoutNet")
+$BreakoutNetBuild = Join-Path $BreakoutNetDir "build.ps1"
+$BreakoutNetDll = Join-Path $BreakoutNetDir "src\BreakoutNet\bin\$Configuration\net462\BreakoutNet.dll"
 
 if (!(Test-Path -LiteralPath $Csc)) {
     throw "Could not find csc.exe at $Csc"
 }
 
+if (!(Test-Path -LiteralPath $BreakoutNetBuild)) {
+    throw "Could not find BreakoutNet build script at $BreakoutNetBuild"
+}
+
+& $BreakoutNetBuild -Configuration $Configuration
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
+if (!(Test-Path -LiteralPath $BreakoutNetDll)) {
+    throw "BreakoutNet.dll was not built at $BreakoutNetDll"
+}
+
 $OutDir = Join-Path $ProjectDir "bin\$Configuration\net462"
 $DeployDir = Join-Path $BepInExDir "plugins\VOIP"
-New-Item -ItemType Directory -Force -Path $OutDir, $DeployDir | Out-Null
+$BreakoutNetDeployDir = Join-Path $BepInExDir "plugins\BreakoutNet"
+New-Item -ItemType Directory -Force -Path $OutDir, $DeployDir, $BreakoutNetDeployDir | Out-Null
 
 $Out = Join-Path $OutDir "VOIP.dll"
 if (Test-Path -LiteralPath $Out) {
@@ -41,7 +58,10 @@ $ManagedReferences = @(
     "/reference:" + (Resolve-Path (Join-Path $ManagedDir $_)).Path
 }
 
-$References = @("/reference:" + (Resolve-Path (Join-Path $BepInExDir "core\BepInEx.dll")).Path) + $ManagedReferences
+$References = @()
+$References += "/reference:" + (Resolve-Path (Join-Path $BepInExDir "core\BepInEx.dll")).Path
+$References += "/reference:" + (Resolve-Path $BreakoutNetDll).Path
+$References += $ManagedReferences
 
 $ConcentusSourceDir = Join-Path $ProjectDir "libs\concentus-v1.2-csharp\CSharp\Concentus"
 if (!(Test-Path -LiteralPath $ConcentusSourceDir)) {
@@ -67,12 +87,15 @@ if (!$Deploy) {
 }
 
 try {
+    Copy-Item -LiteralPath $BreakoutNetDll -Destination $BreakoutNetDeployDir -Force
     Copy-Item -LiteralPath $Out -Destination $DeployDir -Force
     Remove-Item -LiteralPath (Join-Path $DeployDir "Concentus.dll") -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath (Join-Path $DeployDir "Concentus.dll.pending") -Force -ErrorAction SilentlyContinue
     Write-Host "Deployed to $DeployDir"
 } catch {
     $Pending = Join-Path $DeployDir "VOIP.dll.pending"
+    $BreakoutNetPending = Join-Path $BreakoutNetDeployDir "BreakoutNet.dll.pending"
+    Copy-Item -LiteralPath $BreakoutNetDll -Destination $BreakoutNetPending -Force
     Copy-Item -LiteralPath $Out -Destination $Pending -Force
     Remove-Item -LiteralPath (Join-Path $DeployDir "Concentus.dll.pending") -Force -ErrorAction SilentlyContinue
     Write-Warning "Could not overwrite the deployed DLL. It is probably loaded by Valheim or the dedicated server."

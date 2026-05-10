@@ -1,56 +1,33 @@
+using BreakoutMods.BreakoutNet;
+
 namespace VOIP
 {
     internal sealed class VoiceClient
     {
+        private readonly BreakoutModuleContext _context;
+
+        public VoiceClient(BreakoutModuleContext context)
+        {
+            _context = context;
+        }
+
         public void Send(VoicePacket packet)
         {
-            if (ZRoutedRpc.instance == null || ZNet.instance == null)
-            {
-                return;
-            }
-
-            if (ZNet.instance.IsServer())
-            {
-                VoiceServer relay = VoiceServer.Instance;
-                if (relay != null)
-                {
-                    relay.Relay(ZNet.GetUID(), packet);
-                }
-
-                return;
-            }
-
-            ZNetPeer serverPeer = ZNet.instance.GetServerPeer();
-            if (serverPeer == null)
+            if (!BreakoutSide.IsInWorld || ZNet.instance == null)
             {
                 return;
             }
 
             packet.SenderPeerId = ZNet.GetUID();
-            ZRoutedRpc.instance.InvokeRoutedRPC(serverPeer.m_uid, VoiceNetwork.VoiceFrameRpcName, packet.ToPackage());
+            BreakoutRpc.Client.SendToServer(VoiceNetwork.VoiceFrameRpcName, packet, _context != null ? _context.ModGuid : VOIPPlugin.ModGuid);
         }
 
-        public void ApplyServerSettings(long senderPeerId, ZPackage package)
+        public void ApplyServerSettings(VoiceServerSettings settings)
         {
-            if (ZNet.instance == null || ZNet.instance.IsServer())
-            {
-                return;
-            }
-
-            ZNetPeer serverPeer = ZNet.instance.GetServerPeer();
-            if (serverPeer == null || serverPeer.m_uid != senderPeerId)
-            {
-                VoiceLog.WarningRateLimited(
-                    "voice-settings-unauthorized",
-                    "Ignored voice settings package from non-server peer " + senderPeerId + ".",
-                    30f);
-                return;
-            }
-
             try
             {
                 string summary;
-                bool changed = VoiceRuntimeSettings.ApplyServerPackage(package, out summary);
+                bool changed = VoiceRuntimeSettings.ApplyServerSettings(settings, out summary);
                 if (changed)
                 {
                     VOIPPlugin.Log.LogInfo("Applied server voice settings: " + summary);
@@ -59,12 +36,18 @@ namespace VOIP
                 {
                     VoiceLog.InfoRateLimited("voice-settings-unchanged", "Received server voice settings: " + summary, 60f);
                 }
+
+                if (_context != null)
+                {
+                    _context.Events.Publish(new VoiceSettingsAppliedEvent(changed, summary));
+                    _context.Events.Publish("voip.settings.applied", new VoiceSettingsAppliedEvent(changed, summary));
+                }
             }
             catch (System.Exception ex)
             {
                 VoiceLog.WarningRateLimited(
                     "voice-settings-malformed",
-                    "Dropped malformed voice settings package from server peer " + senderPeerId + ": " + ex.Message,
+                    "Dropped malformed voice settings package from server: " + ex.Message,
                     10f);
             }
         }

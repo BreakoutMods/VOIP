@@ -1,8 +1,9 @@
 using UnityEngine;
+using BreakoutMods.BreakoutNet;
 
 namespace VOIP
 {
-    internal sealed class VoicePacket
+    internal sealed class VoicePacket : IBreakoutSerializable
     {
         public const int CurrentProtocolVersion = 2;
         public const int MaxOpusPayloadBytes = 1275;
@@ -19,6 +20,21 @@ namespace VOIP
         public ZPackage ToPackage()
         {
             ZPackage package = new ZPackage();
+            Write(package);
+            package.SetPos(0);
+            return package;
+        }
+
+        public static VoicePacket FromPackage(ZPackage package)
+        {
+            VoicePacket packet = new VoicePacket();
+            packet.Read(package);
+            Validate(packet);
+            return packet;
+        }
+
+        public void Write(ZPackage package)
+        {
             package.Write(ProtocolVersion);
             package.Write(Sequence);
             package.Write(SenderPeerId);
@@ -27,25 +43,19 @@ namespace VOIP
             package.Write(SampleRate);
             package.Write(Samples);
             package.Write(OpusPayload);
-            return package;
         }
 
-        public static VoicePacket FromPackage(ZPackage package)
+        public void Read(ZPackage package)
         {
-            VoicePacket packet = new VoicePacket
-            {
-                ProtocolVersion = package.ReadInt(),
-                Sequence = package.ReadInt(),
-                SenderPeerId = package.ReadLong(),
-                SpeakerId = package.ReadLong(),
-                SpeakerPosition = package.ReadVector3(),
-                SampleRate = package.ReadInt(),
-                Samples = package.ReadInt(),
-                OpusPayload = package.ReadByteArray()
-            };
-
-            Validate(packet);
-            return packet;
+            ProtocolVersion = package.ReadInt();
+            Sequence = package.ReadInt();
+            SenderPeerId = package.ReadLong();
+            SpeakerId = package.ReadLong();
+            SpeakerPosition = package.ReadVector3();
+            SampleRate = package.ReadInt();
+            Samples = package.ReadInt();
+            OpusPayload = package.ReadByteArray();
+            Validate(this);
         }
 
         public static void Validate(VoicePacket packet)

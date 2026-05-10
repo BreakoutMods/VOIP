@@ -1,19 +1,23 @@
 using UnityEngine;
+using BreakoutMods.BreakoutNet;
 
 namespace VOIP
 {
     internal sealed class VoiceServer : MonoBehaviour
     {
-        private const float SettingsBroadcastInterval = 10f;
-
         internal static VoiceServer Instance { get; private set; }
 
         private readonly VoiceRateLimiter _rateLimiter = new VoiceRateLimiter();
-        private float _nextSettingsBroadcast;
+        private BreakoutModuleContext _context;
 
         private void Awake()
         {
             Instance = this;
+        }
+
+        public void Initialize(BreakoutModuleContext context)
+        {
+            _context = context;
         }
 
         private void OnDestroy()
@@ -24,23 +28,9 @@ namespace VOIP
             }
         }
 
-        private void Update()
-        {
-            if (ZNet.instance == null || !ZNet.instance.IsServer())
-            {
-                return;
-            }
-
-            if (Time.time >= _nextSettingsBroadcast)
-            {
-                BroadcastServerSettings();
-                _nextSettingsBroadcast = Time.time + SettingsBroadcastInterval;
-            }
-        }
-
         public VoicePacket Relay(long senderPeerId, VoicePacket packet)
         {
-            if (ZNet.instance == null || ZRoutedRpc.instance == null)
+            if (ZNet.instance == null || !BreakoutSide.IsServer)
             {
                 return null;
             }
@@ -72,8 +62,9 @@ namespace VOIP
             VoicePacket relayPacket = packet.WithServerSpeaker(senderPeerId, speakerPosition);
             float maxDistance = VoiceRuntimeSettings.ProximityMeters;
             float maxDistanceSquared = maxDistance * maxDistance;
+            int recipients = 0;
 
-            foreach (ZNetPeer peer in ZNet.instance.GetConnectedPeers())
+            foreach (ZNetPeer peer in BreakoutPeers.ConnectedPeers)
             {
                 if (peer == null || peer.m_uid == senderPeerId)
                 {
@@ -85,7 +76,17 @@ namespace VOIP
                     continue;
                 }
 
-                ZRoutedRpc.instance.InvokeRoutedRPC(peer.m_uid, VoiceNetwork.VoiceFrameRpcName, relayPacket.ToPackage());
+                if (BreakoutRpc.Server.SendToClient(peer.m_uid, VoiceNetwork.VoiceFrameRpcName, relayPacket, _context != null ? _context.ModGuid : VOIPPlugin.ModGuid))
+                {
+                    recipients++;
+                }
+            }
+
+            if (_context != null)
+            {
+                VoicePacketRelayedEvent relayedEvent = new VoicePacketRelayedEvent(relayPacket.SpeakerId, recipients, relayPacket.Sequence);
+                _context.Events.Publish(relayedEvent);
+                _context.Events.Publish("voip.voice.relayed", relayedEvent);
             }
 
             return relayPacket;
@@ -110,17 +111,6 @@ namespace VOIP
 
             position = Vector3.zero;
             return false;
-        }
-
-        private static void BroadcastServerSettings()
-        {
-            if (ZRoutedRpc.instance == null)
-            {
-                return;
-            }
-
-            ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, VoiceNetwork.SettingsRpcName, VoiceRuntimeSettings.CreateServerPackage());
-            VoiceLog.InfoRateLimited("voice-settings-broadcast", "Broadcasting server voice settings: " + VoiceRuntimeSettings.CreateServerSummary(), 60f);
         }
     }
 }

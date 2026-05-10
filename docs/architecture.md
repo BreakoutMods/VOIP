@@ -69,7 +69,7 @@ Server settings override client session values during multiplayer. Personal clie
 
 Malformed voice packets, unsupported settings versions, and malformed settings packages are logged with rate limits. BreakoutNet handles unknown RPCs, invalid protocol envelopes, client-side non-server packets, settings source checks, and world-left notifications before VOIP sees the message.
 
-Voice packets validate protocol version, sample rate, sample count, payload size, non-empty payloads, and finite positions. Server relay applies per-sender frame rate limiting before forwarding.
+Voice packets validate protocol version, sample rate, sample count, payload size, non-empty payloads, and finite positions. VOIP registers `voip.voice.frame` with a high-frequency BreakoutNet inbound rate policy, then server relay applies its own voice-aware per-sender frame rate limiting before forwarding.
 
 VOIP also publishes local BreakoutNet extension events:
 

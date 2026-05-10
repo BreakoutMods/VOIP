@@ -4,7 +4,7 @@
     <TargetFramework>net462</TargetFramework>
     <RootNamespace>VOIP</RootNamespace>
     <AssemblyName>VOIP</AssemblyName>
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <Authors>BreakoutMods</Authors>
     <Company>BreakoutMods</Company>
     <RepositoryUrl>https://github.com/BreakoutMods/VOIP</RepositoryUrl>

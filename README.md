@@ -21,6 +21,7 @@ Implemented:
 - Opus encoding through embedded Concentus C# source
 - BreakoutNet typed RPC transport over Valheim routed RPC
 - BreakoutNet scoped app context, core hooks, and local extension events
+- BreakoutNet high-frequency RPC rate policy for continuous voice frames
 - Server-side proximity relay
 - Server-authoritative voice settings sync through BreakoutNet
 - Server-authoritative speaker identity and position for relayed packets
@@ -49,6 +50,8 @@ Install `VOIP.dll` on:
 - every client that should use voice chat
 
 VOIP depends on `BreakoutNet.dll`, which must also be installed on the server and clients.
+
+VOIP `0.4.1` requires BreakoutNet `0.2.1` or newer.
 
 Recommended plugin folder:
 

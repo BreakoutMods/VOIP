@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1
+
+- Raised the BreakoutNet dependency to `0.2.1`.
+- Registered the voice-frame RPC with a high-frequency BreakoutNet rate policy so long push-to-talk sessions are not dropped by the generic RPC limiter.
+- Kept VOIP's own server-side voice-aware frame limiter for abuse protection.
+
 ## 0.4.0
 
 - Updated VOIP to use BreakoutNet `0.2.0` app/context APIs.

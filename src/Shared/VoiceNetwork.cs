@@ -8,6 +8,8 @@ namespace VOIP
         internal const string VoiceFrameRpcName = "voip.voice.frame";
         internal const string SettingsName = "voip.settings";
 
+        private static readonly BreakoutRpcRateLimit VoiceFrameRateLimit = BreakoutRpcRateLimit.ForMessagesPerSecond(60f, 3f);
+
         private BreakoutModuleContext _context;
         private VoiceClient _client;
         private VoiceServer _server;
@@ -20,7 +22,7 @@ namespace VOIP
             _server = server;
             _playback = playback;
 
-            BreakoutRpc.Server.Register<VoicePacket>(VoiceFrameRpcName, OnServerVoiceFrame);
+            BreakoutRpc.Server.Register<VoicePacket>(VoiceFrameRpcName, OnServerVoiceFrame, VoiceFrameRateLimit);
             BreakoutRpc.Client.Register<VoicePacket>(VoiceFrameRpcName, OnClientVoiceFrame);
 
             BreakoutSettingsSync.RegisterServerSettings(SettingsName, VoiceRuntimeSettings.CreateServerSettings);

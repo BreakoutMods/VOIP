@@ -26,6 +26,7 @@ Shared code is safe to use from both sides.
 
 - `VoiceNetwork`: registers BreakoutNet RPCs and dispatches packets to client/server components.
 - `VoicePacket`: wire format for encoded voice frames.
+- `VoiceEvents`: local BreakoutNet extension events for settings and relayed voice diagnostics.
 - `VoiceValidationHarness`: lightweight compile-time validation cases for packet rejection behavior.
 - `VoiceRuntimeSettings`: effective session settings and server sync application.
 - `VoiceServerSettings`: BreakoutNet settings-sync DTO for authoritative server voice settings.
@@ -66,6 +67,13 @@ Server settings override client session values during multiplayer. Personal clie
 
 ## Diagnostics
 
-Malformed voice packets, unsupported settings versions, and malformed settings packages are logged with rate limits. BreakoutNet handles unknown RPCs, invalid protocol envelopes, client-side non-server packets, and settings source checks before VOIP sees the message.
+Malformed voice packets, unsupported settings versions, and malformed settings packages are logged with rate limits. BreakoutNet handles unknown RPCs, invalid protocol envelopes, client-side non-server packets, settings source checks, and world-left notifications before VOIP sees the message.
 
 Voice packets validate protocol version, sample rate, sample count, payload size, non-empty payloads, and finite positions. Server relay applies per-sender frame rate limiting before forwarding.
+
+VOIP also publishes local BreakoutNet extension events:
+
+```text
+voip.settings.applied
+voip.voice.relayed
+```

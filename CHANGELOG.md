@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+- Updated VOIP to use BreakoutNet `0.2.0` app/context APIs.
+- Replaced VOIP's local world-left polling with BreakoutNet core hooks.
+- Added local VOIP extension events for settings application and relayed voice packets.
+
 ## 0.3.0
 
 - Migrated VOIP voice frame transport to BreakoutNet typed RPCs.

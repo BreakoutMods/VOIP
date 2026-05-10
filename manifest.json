@@ -1,10 +1,10 @@
 {
   "name": "VOIP",
-  "version_number": "0.3.0",
+  "version_number": "0.4.0",
   "website_url": "https://github.com/BreakoutMods/VOIP",
   "description": "BreakoutMods VOIP adds experimental proximity voice chat to Valheim using the existing Valheim network session.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2333",
-    "BreakoutMods-BreakoutNet-0.1.0"
+    "BreakoutMods-BreakoutNet-0.2.0"
   ]
 }

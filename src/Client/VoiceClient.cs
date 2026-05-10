@@ -4,6 +4,13 @@ namespace VOIP
 {
     internal sealed class VoiceClient
     {
+        private readonly BreakoutModuleContext _context;
+
+        public VoiceClient(BreakoutModuleContext context)
+        {
+            _context = context;
+        }
+
         public void Send(VoicePacket packet)
         {
             if (!BreakoutSide.IsInWorld || ZNet.instance == null)
@@ -12,7 +19,7 @@ namespace VOIP
             }
 
             packet.SenderPeerId = ZNet.GetUID();
-            BreakoutRpc.Client.SendToServer(VoiceNetwork.VoiceFrameRpcName, packet, VOIPPlugin.ModGuid);
+            BreakoutRpc.Client.SendToServer(VoiceNetwork.VoiceFrameRpcName, packet, _context != null ? _context.ModGuid : VOIPPlugin.ModGuid);
         }
 
         public void ApplyServerSettings(VoiceServerSettings settings)
@@ -28,6 +35,12 @@ namespace VOIP
                 else
                 {
                     VoiceLog.InfoRateLimited("voice-settings-unchanged", "Received server voice settings: " + summary, 60f);
+                }
+
+                if (_context != null)
+                {
+                    _context.Events.Publish(new VoiceSettingsAppliedEvent(changed, summary));
+                    _context.Events.Publish("voip.settings.applied", new VoiceSettingsAppliedEvent(changed, summary));
                 }
             }
             catch (System.Exception ex)

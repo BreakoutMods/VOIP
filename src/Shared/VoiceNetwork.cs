@@ -8,13 +8,14 @@ namespace VOIP
         internal const string VoiceFrameRpcName = "voip.voice.frame";
         internal const string SettingsName = "voip.settings";
 
+        private BreakoutModuleContext _context;
         private VoiceClient _client;
         private VoiceServer _server;
         private VoicePlayback _playback;
-        private bool _wasInWorld;
 
-        public void Initialize(VoiceClient client, VoiceServer server, VoicePlayback playback)
+        public void Initialize(BreakoutModuleContext context, VoiceClient client, VoiceServer server, VoicePlayback playback)
         {
+            _context = context;
             _client = client;
             _server = server;
             _playback = playback;
@@ -24,6 +25,12 @@ namespace VOIP
 
             BreakoutSettingsSync.RegisterServerSettings(SettingsName, VoiceRuntimeSettings.CreateServerSettings);
             BreakoutSettingsSync.Client.Register<VoiceServerSettings>(SettingsName, OnClientSettings);
+
+            if (_context != null)
+            {
+                _context.Hooks.OnWorldLeft(OnWorldLeft);
+                _context.Hooks.OnRpcRejected(OnRpcRejected);
+            }
 
             VOIPPlugin.Log.LogInfo("Voice RPC registered through BreakoutNet.");
         }
@@ -36,15 +43,25 @@ namespace VOIP
             }
         }
 
-        private void Update()
+        private void OnWorldLeft(BreakoutWorldLeftEvent evt)
         {
-            bool isInWorld = BreakoutSide.IsInWorld;
-            if (_wasInWorld && !isInWorld && _client != null)
+            if (_client != null)
             {
                 _client.OnRpcUnavailable();
             }
+        }
 
-            _wasInWorld = isInWorld;
+        private static void OnRpcRejected(BreakoutRpcRejectedEvent evt)
+        {
+            if (evt.RpcName != VoiceFrameRpcName && evt.RpcName != string.Empty)
+            {
+                return;
+            }
+
+            VoiceLog.WarningRateLimited(
+                "voice-breakoutnet-rpc-rejected-" + evt.Category,
+                "BreakoutNet rejected a VOIP RPC from peer " + evt.SenderPeerId + ": " + evt.Reason,
+                10f);
         }
 
         private void OnServerVoiceFrame(BreakoutRpcContext context, VoicePacket packet)

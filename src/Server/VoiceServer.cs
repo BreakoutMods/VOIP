@@ -8,10 +8,16 @@ namespace VOIP
         internal static VoiceServer Instance { get; private set; }
 
         private readonly VoiceRateLimiter _rateLimiter = new VoiceRateLimiter();
+        private BreakoutModuleContext _context;
 
         private void Awake()
         {
             Instance = this;
+        }
+
+        public void Initialize(BreakoutModuleContext context)
+        {
+            _context = context;
         }
 
         private void OnDestroy()
@@ -56,6 +62,7 @@ namespace VOIP
             VoicePacket relayPacket = packet.WithServerSpeaker(senderPeerId, speakerPosition);
             float maxDistance = VoiceRuntimeSettings.ProximityMeters;
             float maxDistanceSquared = maxDistance * maxDistance;
+            int recipients = 0;
 
             foreach (ZNetPeer peer in BreakoutPeers.ConnectedPeers)
             {
@@ -69,7 +76,17 @@ namespace VOIP
                     continue;
                 }
 
-                BreakoutRpc.Server.SendToClient(peer.m_uid, VoiceNetwork.VoiceFrameRpcName, relayPacket, VOIPPlugin.ModGuid);
+                if (BreakoutRpc.Server.SendToClient(peer.m_uid, VoiceNetwork.VoiceFrameRpcName, relayPacket, _context != null ? _context.ModGuid : VOIPPlugin.ModGuid))
+                {
+                    recipients++;
+                }
+            }
+
+            if (_context != null)
+            {
+                VoicePacketRelayedEvent relayedEvent = new VoicePacketRelayedEvent(relayPacket.SpeakerId, recipients, relayPacket.Sequence);
+                _context.Events.Publish(relayedEvent);
+                _context.Events.Publish("voip.voice.relayed", relayedEvent);
             }
 
             return relayPacket;

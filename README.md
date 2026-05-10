@@ -4,6 +4,10 @@ Part of the BreakoutMods modding suite.
 
 Experimental BepInEx mod that adds proximity voice chat to Valheim using the existing Valheim network session.
 
+Community: [BreakoutMods Discord](https://discord.gg/ArmCF3nscW)
+
+Support development: [BreakoutMods Patreon](https://www.patreon.com/breakoutmods)
+
 The goal is simple server-hosted RP voice chat: clients capture microphone audio, the dedicated server relays voice only to nearby players, and no separate public VOIP server address is required.
 
 ## Status
@@ -16,6 +20,7 @@ Implemented:
 - Optional voice activation
 - Opus encoding through embedded Concentus C# source
 - BreakoutNet typed RPC transport over Valheim routed RPC
+- BreakoutNet scoped app context, core hooks, and local extension events
 - Server-side proximity relay
 - Server-authoritative voice settings sync through BreakoutNet
 - Server-authoritative speaker identity and position for relayed packets
@@ -189,6 +194,22 @@ More detail: [docs/architecture.md](docs/architecture.md)
 - Keep network boilerplate in BreakoutNet where possible; VOIP should only own voice-specific validation and relay policy.
 - Do not add a separate runtime codec DLL unless the loader/package plan changes.
 - Avoid changing Valheim gameplay state from voice code.
+
+## BreakoutNet Extension Events
+
+VOIP publishes local, non-networked BreakoutNet events for other mods and HUD/admin integrations:
+
+- typed `VoiceSettingsAppliedEvent`
+- typed `VoicePacketRelayedEvent`
+- named `voip.settings.applied`
+- named `voip.voice.relayed`
+
+Subscribe through a BreakoutNet context:
+
+```csharp
+Context.Events.Subscribe<VoiceSettingsAppliedEvent>("voip.settings.applied", OnVoiceSettingsApplied);
+Context.Events.Subscribe<VoicePacketRelayedEvent>("voip.voice.relayed", OnVoicePacketRelayed);
+```
 
 ## Roadmap
 
